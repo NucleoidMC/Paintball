@@ -1,0 +1,14 @@
+{
+	"gameType.paintball.paintball": "Paintball",
+	"item.paintball.paintball_launcher": "Paintball Launcher",
+	"text.paintball.eliminated": "%s has been eliminated!",
+	"text.paintball.eliminated.by": "%s has been eliminated by %s!",
+	"text.paintball.eliminated.out_of_bounds": "%s has been eliminated by going out of bounds!",
+	"text.paintball.no_winners": "Nobody won the game!",
+	"text.paintball.team_armor.boots": "%s Boots",
+	"text.paintball.team_armor.chestplate": "%s Chestplate",
+	"text.paintball.team_armor.helmet": "%s Helmet",
+	"text.paintball.team_armor.leggings": "%s Leggings",
+	"text.paintball.template_load_failed": "Failed to load the map template",
+	"text.paintball.win": "The %s team has won the game!"
+}

@@ -1,0 +1,22 @@
+{
+	"type": "paintball:paintball",
+	"name": "Paintball: Garden",
+	"map": "paintball:garden",
+	"players": {
+		"min": 1,
+		"max": 32,
+		"threshold": 2
+	},
+	"teams": [
+		{
+			"key": "red",
+			"display": "Red",
+			"color": "red"
+		},
+		{
+			"key": "blue",
+			"display": "Blue",
+			"color": "blue"
+		}
+	]
+}

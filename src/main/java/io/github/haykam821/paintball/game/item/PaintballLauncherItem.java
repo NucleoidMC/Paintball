@@ -1,0 +1,103 @@
+package io.github.haykam821.paintball.game.item;
+
+import eu.pb4.polymer.item.VirtualItem;
+import io.github.haykam821.paintball.game.event.LaunchPaintballListener;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.thrown.SnowballEntity;
+import net.minecraft.item.DyeItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.stat.Stats;
+import net.minecraft.util.DyeColor;
+import net.minecraft.util.Hand;
+import net.minecraft.util.TypedActionResult;
+import net.minecraft.world.World;
+import xyz.nucleoid.plasmid.game.ManagedGameSpace;
+
+public class PaintballLauncherItem extends Item implements VirtualItem {
+	private static final int DYE_COLORS = DyeColor.values().length;
+	private static final int COOLDOWN = 10;
+
+	public PaintballLauncherItem(Item.Settings settings) {
+		super(settings);
+	}
+
+	private void playSound(SoundEvent sound, World world, PlayerEntity player) {
+		float pitch = (world.getRandom().nextFloat() * 0.3f) + 1.7f;
+		world.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundCategory.PLAYERS, 0.5f, pitch);
+	}
+
+	private SoundEvent getFailSound(World world, PlayerEntity player) {
+		return SoundEvents.BLOCK_DISPENSER_FAIL;
+	}
+
+	private SoundEvent getLaunchSound(World world, PlayerEntity player) {
+		return SoundEvents.ENTITY_SNOWBALL_THROW;
+	}
+
+	private ProjectileEntity createDefaultProjectile(World world, ServerPlayerEntity player) {
+		SnowballEntity projectile = new SnowballEntity(world, player);
+
+		DyeColor color = DyeColor.byId(world.getRandom().nextInt(DYE_COLORS));
+		if (color == null) {
+			color = DyeColor.WHITE;
+		}
+
+		Item item = DyeItem.byColor(color);
+		if (item == null) {
+			item = Items.WHITE_DYE;
+		}
+
+		projectile.setItem(new ItemStack(item));
+		return projectile;
+	}
+
+	private Entity createProjectile(World world, ServerPlayerEntity player) {
+		ProjectileEntity projectile;
+
+		ManagedGameSpace gameSpace = ManagedGameSpace.forWorld(world);
+		if (gameSpace == null) {
+			projectile = this.createDefaultProjectile(world, player);
+		} else {
+			projectile = gameSpace.invoker(LaunchPaintballListener.EVENT).onLaunchProjectile(world, player);
+		}
+
+		if (projectile == null) return null;
+		projectile.setProperties(player, player.pitch, player.yaw, 0, 1.5f, 1);
+
+		return projectile;
+	}
+
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		ItemStack stack = user.getStackInHand(hand);
+		if (world.isClient()) {
+			return TypedActionResult.success(stack);
+		}
+
+		Entity projectile = this.createProjectile(world, (ServerPlayerEntity) user);
+		if (projectile == null) {
+			this.playSound(this.getFailSound(world, user), world, user);
+		} else {
+			this.playSound(this.getLaunchSound(world, user), world, user);
+			user.incrementStat(Stats.USED.getOrCreateStat(this));
+			user.getItemCooldownManager().set(this, COOLDOWN);
+		
+			world.spawnEntity(projectile);
+		}
+
+		return TypedActionResult.consume(stack);
+	}
+
+	@Override
+	public Item getVirtualItem() {
+		return Items.DIAMOND_HORSE_ARMOR;
+	}
+}

@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "paintball",
+	"version": "${version}",
+	"name": "Paintball",
+	"description": "A projectile team deathmatch minigame for Minecraft.",
+	"authors": [
+		"haykam821"
+	],
+	"contact": {
+		"homepage": "https://github.com/haykam821/Paintball#readme",
+		"issues": "https://github.com/haykam821/Paintball/issues"
+	},
+	"entrypoints": {
+		"main": [
+			"io.github.haykam821.paintball.Main"
+		]
+	},
+	"license": "MIT",
+	"icon": "assets/paintball/icon.png",
+	"depends": {
+		"fabricloader": ">=0.4.0",
+		"plasmid": ">=0.4.22"
+	}
+}
