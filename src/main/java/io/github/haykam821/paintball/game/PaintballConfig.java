@@ -16,7 +16,8 @@ public class PaintballConfig {
 			PlayerConfig.CODEC.fieldOf("players").forGetter(PaintballConfig::getPlayerConfig),
 			GameTeam.CODEC.listOf().fieldOf("teams").forGetter(PaintballConfig::getTeams),
 			Codec.INT.optionalFieldOf("max_damage", 4).forGetter(PaintballConfig::getMaxDamage),
-			Codec.BOOL.optionalFieldOf("allow_friendly_fire", false).forGetter(PaintballConfig::shouldAllowFriendlyFire)
+			Codec.BOOL.optionalFieldOf("allow_friendly_fire", false).forGetter(PaintballConfig::shouldAllowFriendlyFire),
+			Codec.INT.optionalFieldOf("stain_radius", 2).forGetter(PaintballConfig::getStainRadius)
 		).apply(instance, PaintballConfig::new);
 	});
 
@@ -25,13 +26,15 @@ public class PaintballConfig {
 	private final List<GameTeam> teams;
 	private final int maxDamage;
 	private final boolean allowFriendlyFire;
+	private final int stainRadius;
 
-	public PaintballConfig(Identifier map, PlayerConfig playerConfig, List<GameTeam> teams, int maxDamage, boolean allowFriendlyFire) {
+	public PaintballConfig(Identifier map, PlayerConfig playerConfig, List<GameTeam> teams, int maxDamage, boolean allowFriendlyFire, int stainRadius) {
 		this.map = map;
 		this.playerConfig = playerConfig;
 		this.teams = teams;
 		this.maxDamage = maxDamage;
 		this.allowFriendlyFire = allowFriendlyFire;
+		this.stainRadius = stainRadius;
 	}
 
 	public Identifier getMap() {
@@ -52,5 +55,9 @@ public class PaintballConfig {
 
 	public boolean shouldAllowFriendlyFire() {
 		return this.allowFriendlyFire;
+	}
+
+	public int getStainRadius() {
+		return this.stainRadius;
 	}
 }

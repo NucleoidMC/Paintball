@@ -8,6 +8,7 @@ import java.util.Set;
 
 import io.github.haykam821.paintball.game.PaintballConfig;
 import io.github.haykam821.paintball.game.event.LaunchPaintballListener;
+import io.github.haykam821.paintball.game.map.BlockStaining;
 import io.github.haykam821.paintball.game.map.PaintballMap;
 import io.github.haykam821.paintball.game.player.PlayerEntry;
 import io.github.haykam821.paintball.game.player.WinManager;
@@ -28,6 +29,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
@@ -35,6 +37,7 @@ import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameLogic;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.TeamSelectionLobby;
+import xyz.nucleoid.plasmid.game.event.BlockHitListener;
 import xyz.nucleoid.plasmid.game.event.EntityHitListener;
 import xyz.nucleoid.plasmid.game.event.GameCloseListener;
 import xyz.nucleoid.plasmid.game.event.GameOpenListener;
@@ -45,9 +48,10 @@ import xyz.nucleoid.plasmid.game.event.PlayerRemoveListener;
 import xyz.nucleoid.plasmid.game.player.GameTeam;
 import xyz.nucleoid.plasmid.game.rule.GameRule;
 import xyz.nucleoid.plasmid.game.rule.RuleResult;
+import xyz.nucleoid.plasmid.util.BlockTraversal;
 import xyz.nucleoid.plasmid.widget.GlobalWidgets;
 
-public class PaintballActivePhase implements EntityHitListener, GameCloseListener, GameOpenListener, GameTickListener, LaunchPaintballListener, PlayerAddListener, PlayerDeathListener, PlayerRemoveListener {
+public class PaintballActivePhase implements BlockHitListener, EntityHitListener, GameCloseListener, GameOpenListener, GameTickListener, LaunchPaintballListener, PlayerAddListener, PlayerDeathListener, PlayerRemoveListener {
 	private final ServerWorld world;
 	private final GameSpace gameSpace;
 	private final PaintballMap map;
@@ -113,6 +117,7 @@ public class PaintballActivePhase implements EntityHitListener, GameCloseListene
 			PaintballActivePhase.setRules(game);
 
 			// Listeners
+			game.on(BlockHitListener.EVENT, phase);
 			game.on(EntityHitListener.EVENT, phase);
 			game.on(GameCloseListener.EVENT, phase);
 			game.on(GameOpenListener.EVENT, phase);
@@ -125,6 +130,28 @@ public class PaintballActivePhase implements EntityHitListener, GameCloseListene
 	}
 
 	// Listeners
+	@Override
+	public ActionResult onBlockHit(ProjectileEntity entity, BlockHitResult hitResult) {
+		if (this.config.getStainRadius() > 0) {
+			if (entity.getOwner() instanceof ServerPlayerEntity) {
+				PlayerEntry entry = this.getPlayerEntry((ServerPlayerEntity) entity.getOwner());
+				if (entry != null) {
+					DyeColor color = entry.getTeam().getGameTeam().getDye();
+					BlockTraversal.create().accept(hitResult.getBlockPos(), (pos, fromPos, depth) -> {
+						if (depth > this.config.getStainRadius()) {
+							return BlockTraversal.Result.TERMINATE;
+						}
+
+						BlockStaining.setStainedState(this.world, pos, color);
+						return BlockTraversal.Result.CONTINUE;
+					});
+				}
+			}
+		}
+
+		return ActionResult.FAIL;
+	}
+
 	@Override
 	public ActionResult onEntityHit(ProjectileEntity entity, EntityHitResult hitResult) {
 		if (hitResult.getEntity() instanceof ServerPlayerEntity) {
