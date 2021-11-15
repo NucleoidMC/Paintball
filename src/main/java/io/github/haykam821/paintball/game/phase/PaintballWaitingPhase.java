@@ -68,17 +68,17 @@ public class PaintballWaitingPhase implements GameTickListener, PlayerAddListene
 
 		return context.createOpenProcedure(worldConfig, game -> {
 			TeamSelectionLobby teamSelection = TeamSelectionLobby.applyTo(game, config.getTeams());
-			PaintballWaitingPhase phase = new PaintballWaitingPhase(game.getSpace(), map, teamSelection, config);
+			PaintballWaitingPhase phase = new PaintballWaitingPhase(game.getGameSpace(), map, teamSelection, config);
 			GameWaitingLobby.applyTo(game, config.getPlayerConfig());
 
 			PaintballWaitingPhase.setRules(game);
 
 			// Listeners
-			game.on(GameTickListener.EVENT, phase);
-			game.on(PlayerAddListener.EVENT, phase);
-			game.on(PlayerDamageListener.EVENT, phase);
-			game.on(PlayerDeathListener.EVENT, phase);
-			game.on(RequestStartListener.EVENT, phase);
+			game.listen(GameTickListener.EVENT, phase);
+			game.listen(PlayerAddListener.EVENT, phase);
+			game.listen(PlayerDamageListener.EVENT, phase);
+			game.listen(PlayerDeathListener.EVENT, phase);
+			game.listen(RequestStartListener.EVENT, phase);
 		});
 	}
 

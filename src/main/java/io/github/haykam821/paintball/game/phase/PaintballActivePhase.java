@@ -47,7 +47,6 @@ import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
 import xyz.nucleoid.plasmid.game.event.PlayerRemoveListener;
 import xyz.nucleoid.plasmid.game.player.GameTeam;
 import xyz.nucleoid.plasmid.game.rule.GameRule;
-import xyz.nucleoid.plasmid.game.rule.RuleResult;
 import xyz.nucleoid.plasmid.util.BlockTraversal;
 import xyz.nucleoid.plasmid.widget.GlobalWidgets;
 
@@ -93,20 +92,20 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 	}
 
 	private static void setRules(GameLogic game) {
-		game.setRule(GameRule.BLOCK_DROPS, RuleResult.DENY);
-		game.setRule(GameRule.BREAK_BLOCKS, RuleResult.DENY);
-		game.setRule(GameRule.CRAFTING, RuleResult.DENY);
-		game.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
-		game.setRule(GameRule.FLUID_FLOW, RuleResult.DENY);
-		game.setRule(GameRule.HUNGER, RuleResult.DENY);
-		game.setRule(GameRule.INTERACTION, RuleResult.DENY);
-		game.setRule(GameRule.MODIFY_ARMOR, RuleResult.DENY);
-		game.setRule(GameRule.MODIFY_INVENTORY, RuleResult.DENY);
-		game.setRule(GameRule.PLACE_BLOCKS, RuleResult.DENY);
-		game.setRule(GameRule.PORTALS, RuleResult.DENY);
-		game.setRule(GameRule.PVP, RuleResult.DENY);
-		game.setRule(GameRule.TEAM_CHAT, RuleResult.ALLOW);
-		game.setRule(GameRule.THROW_ITEMS, RuleResult.DENY);
+		game.deny(GameRule.BLOCK_DROPS);
+		game.deny(GameRule.BREAK_BLOCKS);
+		game.deny(GameRule.CRAFTING);
+		game.deny(GameRule.FALL_DAMAGE);
+		game.deny(GameRule.FLUID_FLOW);
+		game.deny(GameRule.HUNGER);
+		game.deny(GameRule.INTERACTION);
+		game.deny(GameRule.MODIFY_ARMOR);
+		game.deny(GameRule.MODIFY_INVENTORY);
+		game.deny(GameRule.PLACE_BLOCKS);
+		game.deny(GameRule.PORTALS);
+		game.deny(GameRule.PVP);
+		game.allow(GameRule.TEAM_CHAT);
+		game.deny(GameRule.THROW_ITEMS);
 	}
 
 	public static void open(GameSpace gameSpace, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
@@ -117,15 +116,15 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 			PaintballActivePhase.setRules(game);
 
 			// Listeners
-			game.on(BlockHitListener.EVENT, phase);
-			game.on(EntityHitListener.EVENT, phase);
-			game.on(GameCloseListener.EVENT, phase);
-			game.on(GameOpenListener.EVENT, phase);
-			game.on(GameTickListener.EVENT, phase);
-			game.on(LaunchPaintballListener.EVENT, phase);
-			game.on(PlayerAddListener.EVENT, phase);
-			game.on(PlayerDeathListener.EVENT, phase);
-			game.on(PlayerRemoveListener.EVENT, phase);
+			game.listen(BlockHitListener.EVENT, phase);
+			game.listen(EntityHitListener.EVENT, phase);
+			game.listen(GameCloseListener.EVENT, phase);
+			game.listen(GameOpenListener.EVENT, phase);
+			game.listen(GameTickListener.EVENT, phase);
+			game.listen(LaunchPaintballListener.EVENT, phase);
+			game.listen(PlayerAddListener.EVENT, phase);
+			game.listen(PlayerDeathListener.EVENT, phase);
+			game.listen(PlayerRemoveListener.EVENT, phase);
 		});
 	}
 
