@@ -38,15 +38,15 @@ public class ArmorSet {
 
 	private ItemStack getArmorItem(ItemConvertible item, TeamEntry team, String key) {
 		return ItemStackBuilder.of(item)
-			.setColor(this.color)
+			.setDyeColor(this.color)
 			.setName(this.getArmorName(team, key))
 			.setUnbreakable()
 			.build();
 	}
 
 	private Text getArmorName(TeamEntry team, String key) {
-		return new TranslatableText("text.paintball.team_armor." + key, team.getUncoloredName())
-			.formatted(team.getGameTeam().getFormatting());
+		return new TranslatableText("text.paintball.team_armor." + key, team.getName())
+			.formatted(team.getConfig().chatFormatting());
 	}
 
 	@Override

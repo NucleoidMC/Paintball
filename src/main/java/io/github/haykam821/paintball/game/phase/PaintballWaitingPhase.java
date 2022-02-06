@@ -4,81 +4,84 @@ import io.github.haykam821.paintball.game.PaintballConfig;
 import io.github.haykam821.paintball.game.map.PaintballMap;
 import io.github.haykam821.paintball.game.map.PaintballMapBuilder;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.GameRules;
-import xyz.nucleoid.fantasy.BubbleWorldConfig;
-import xyz.nucleoid.plasmid.game.GameLogic;
+import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import xyz.nucleoid.plasmid.game.GameActivity;
 import xyz.nucleoid.plasmid.game.GameOpenContext;
 import xyz.nucleoid.plasmid.game.GameOpenProcedure;
+import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.GameWaitingLobby;
-import xyz.nucleoid.plasmid.game.StartResult;
-import xyz.nucleoid.plasmid.game.TeamSelectionLobby;
-import xyz.nucleoid.plasmid.game.event.GameTickListener;
-import xyz.nucleoid.plasmid.game.event.PlayerAddListener;
-import xyz.nucleoid.plasmid.game.event.PlayerDamageListener;
-import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
-import xyz.nucleoid.plasmid.game.event.RequestStartListener;
-import xyz.nucleoid.plasmid.game.rule.GameRule;
-import xyz.nucleoid.plasmid.game.rule.RuleResult;
+import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
+import xyz.nucleoid.plasmid.game.common.team.TeamSelectionLobby;
+import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.player.PlayerOffer;
+import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
+import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
-public class PaintballWaitingPhase implements GameTickListener, PlayerAddListener, PlayerDamageListener, PlayerDeathListener, RequestStartListener {
+public class PaintballWaitingPhase implements GameActivityEvents.Tick, GamePlayerEvents.Offer, PlayerDamageEvent, PlayerDeathEvent, GameActivityEvents.RequestStart {
 	private final GameSpace gameSpace;
+	private final ServerWorld world;
 	private final PaintballMap map;
 	private final TeamSelectionLobby teamSelection;
 	private final PaintballConfig config;
 
-	public PaintballWaitingPhase(GameSpace gameSpace, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
+	public PaintballWaitingPhase(GameSpace gameSpace, ServerWorld world, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
 		this.gameSpace = gameSpace;
+		this.world = world;
 		this.map = map;
 		this.teamSelection = teamSelection;
 		this.config = config;
 	}
 
-	private static void setRules(GameLogic game) {
-		game.setRule(GameRule.BLOCK_DROPS, RuleResult.DENY);
-		game.setRule(GameRule.BREAK_BLOCKS, RuleResult.DENY);
-		game.setRule(GameRule.CRAFTING, RuleResult.DENY);
-		game.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
-		game.setRule(GameRule.FLUID_FLOW, RuleResult.DENY);
-		game.setRule(GameRule.HUNGER, RuleResult.DENY);
-		game.setRule(GameRule.INTERACTION, RuleResult.DENY);
-		game.setRule(GameRule.MODIFY_ARMOR, RuleResult.DENY);
-		game.setRule(GameRule.MODIFY_INVENTORY, RuleResult.DENY);
-		game.setRule(GameRule.PLACE_BLOCKS, RuleResult.DENY);
-		game.setRule(GameRule.PORTALS, RuleResult.DENY);
-		game.setRule(GameRule.PVP, RuleResult.DENY);
-		game.setRule(GameRule.TEAM_CHAT, RuleResult.DENY);
-		game.setRule(GameRule.THROW_ITEMS, RuleResult.DENY);
+	private static void setRules(GameActivity activity) {
+		activity.deny(GameRuleType.BLOCK_DROPS);
+		activity.deny(GameRuleType.BREAK_BLOCKS);
+		activity.deny(GameRuleType.CRAFTING);
+		activity.deny(GameRuleType.FALL_DAMAGE);
+		activity.deny(GameRuleType.FLUID_FLOW);
+		activity.deny(GameRuleType.HUNGER);
+		activity.deny(GameRuleType.INTERACTION);
+		activity.deny(GameRuleType.MODIFY_ARMOR);
+		activity.deny(GameRuleType.MODIFY_INVENTORY);
+		activity.deny(GameRuleType.PLACE_BLOCKS);
+		activity.deny(GameRuleType.PORTALS);
+		activity.deny(GameRuleType.PVP);
+		activity.deny(GameRuleType.THROW_ITEMS);
 	}
 
 	public static GameOpenProcedure open(GameOpenContext<PaintballConfig> context) {
-		PaintballConfig config = context.getConfig();
+		PaintballConfig config = context.config();
+		MinecraftServer server = context.server();
 
 		PaintballMapBuilder mapBuilder = new PaintballMapBuilder(config);
-		PaintballMap map = mapBuilder.create();
+		PaintballMap map = mapBuilder.create(server);
 
-		BubbleWorldConfig worldConfig = new BubbleWorldConfig()
-			.setGenerator(map.createGenerator(context.getServer()))
+		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+			.setGenerator(map.createGenerator(server))
 			.setGameRule(GameRules.NATURAL_REGENERATION, false)
-			.setGameRule(GameRules.DROWNING_DAMAGE, false)
-			.setDefaultGameMode(GameMode.ADVENTURE);
+			.setGameRule(GameRules.DROWNING_DAMAGE, false);
 
-		return context.createOpenProcedure(worldConfig, game -> {
-			TeamSelectionLobby teamSelection = TeamSelectionLobby.applyTo(game, config.getTeams());
-			PaintballWaitingPhase phase = new PaintballWaitingPhase(game.getGameSpace(), map, teamSelection, config);
-			GameWaitingLobby.applyTo(game, config.getPlayerConfig());
+		return context.openWithWorld(worldConfig, (activity, world) -> {
+			TeamSelectionLobby teamSelection = TeamSelectionLobby.addTo(activity, config.getTeams());
+			PaintballWaitingPhase phase = new PaintballWaitingPhase(activity.getGameSpace(), world, map, teamSelection, config);
+			GameWaitingLobby.addTo(activity, config.getPlayerConfig());
 
-			PaintballWaitingPhase.setRules(game);
+			PaintballWaitingPhase.setRules(activity);
 
 			// Listeners
-			game.listen(GameTickListener.EVENT, phase);
-			game.listen(PlayerAddListener.EVENT, phase);
-			game.listen(PlayerDamageListener.EVENT, phase);
-			game.listen(PlayerDeathListener.EVENT, phase);
-			game.listen(RequestStartListener.EVENT, phase);
+			activity.listen(GameActivityEvents.TICK, phase);
+			activity.listen(GamePlayerEvents.OFFER, phase);
+			activity.listen(PlayerDamageEvent.EVENT, phase);
+			activity.listen(PlayerDeathEvent.EVENT, phase);
+			activity.listen(GameActivityEvents.REQUEST_START, phase);
 		});
 	}
 
@@ -92,8 +95,10 @@ public class PaintballWaitingPhase implements GameTickListener, PlayerAddListene
 	}
 
 	@Override
-	public void onAddPlayer(ServerPlayerEntity player) {
-		this.map.teleportToWaitingSpawn(player);
+	public PlayerOfferResult onOfferPlayer(PlayerOffer offer) {
+		return this.map.acceptWaitingSpawnOffer(offer, this.world).and(() -> {
+			offer.player().changeGameMode(GameMode.ADVENTURE);
+		});
 	}
 
 	@Override
@@ -108,8 +113,8 @@ public class PaintballWaitingPhase implements GameTickListener, PlayerAddListene
 	}
 
 	@Override
-	public StartResult requestStart() {
-		PaintballActivePhase.open(this.gameSpace, this.map, this.teamSelection, this.config);
-		return StartResult.OK;
+	public GameResult onRequestStart() {
+		PaintballActivePhase.open(this.gameSpace, this.world, this.map, this.teamSelection, this.config);
+		return GameResult.ok();
 	}
 }

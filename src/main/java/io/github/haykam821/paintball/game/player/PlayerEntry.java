@@ -44,7 +44,7 @@ public class PlayerEntry {
 	// Utilities
 	public void spawn(boolean spectator) {
 		// State
-		this.player.setGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+		this.player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
 		this.player.setAir(this.player.getMaxAir());
 		this.player.setFireTicks(0);
 		this.player.fallDistance = 0;
@@ -58,7 +58,7 @@ public class PlayerEntry {
 		}
 
 		// Inventory
-		this.player.inventory.clear();
+		this.player.getInventory().clear();
 		this.player.setExperienceLevel(0);
 		this.player.setExperiencePoints(0);
 
@@ -107,8 +107,7 @@ public class PlayerEntry {
 		this.applyHealth(damageProgress);
 
 		this.player.currentScreenHandler.sendContentUpdates();
-		this.player.playerScreenHandler.onContentChanged(this.player.inventory);
-		this.player.updateCursorStack();
+		this.player.playerScreenHandler.onContentChanged(this.player.getInventory());
 	}
 
 	/**

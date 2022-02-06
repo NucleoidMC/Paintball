@@ -1,7 +1,7 @@
 package io.github.haykam821.paintball.game.item;
 
 import eu.pb4.polymer.item.VirtualItem;
-import io.github.haykam821.paintball.game.event.LaunchPaintballListener;
+import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
@@ -19,7 +19,8 @@ import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import xyz.nucleoid.plasmid.game.ManagedGameSpace;
+import xyz.nucleoid.stimuli.EventInvokers;
+import xyz.nucleoid.stimuli.Stimuli;
 
 public class PaintballLauncherItem extends Item implements VirtualItem {
 	private static final int DYE_COLORS = DyeColor.values().length;
@@ -62,15 +63,14 @@ public class PaintballLauncherItem extends Item implements VirtualItem {
 	private Entity createProjectile(World world, ServerPlayerEntity player) {
 		ProjectileEntity projectile;
 
-		ManagedGameSpace gameSpace = ManagedGameSpace.forWorld(world);
-		if (gameSpace == null) {
-			projectile = this.createDefaultProjectile(world, player);
-		} else {
-			projectile = gameSpace.invoker(LaunchPaintballListener.EVENT).onLaunchProjectile(world, player);
+		try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
+			projectile = invokers.get(LaunchPaintballEvent.EVENT).onLaunchProjectile(world, player);
 		}
 
-		if (projectile == null) return null;
-		projectile.setProperties(player, player.pitch, player.yaw, 0, 1.5f, 1);
+		if (projectile == null) {
+			projectile = this.createDefaultProjectile(world, player);
+		}
+		projectile.setProperties(player, player.getPitch(), player.getYaw(), 0, 1.5f, 1);
 
 		return projectile;
 	}

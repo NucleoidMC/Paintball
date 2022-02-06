@@ -1,4 +1,5 @@
 {
+	"game.paintball.garden_paintball": "Paintball: Garden",
 	"gameType.paintball.paintball": "Paintball",
 	"item.paintball.paintball_launcher": "Paintball Launcher",
 	"text.paintball.eliminated": "%s has been eliminated!",

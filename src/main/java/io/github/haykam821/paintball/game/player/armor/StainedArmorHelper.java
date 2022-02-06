@@ -1,8 +1,8 @@
 package io.github.haykam821.paintball.game.player.armor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import io.github.haykam821.paintball.game.player.team.TeamEntry;
 import net.minecraft.item.DyeItem;
@@ -14,11 +14,11 @@ import net.minecraft.util.DyeColor;
 public final class StainedArmorHelper {
 	private static final int DEFAULT_STAINED_COLOR = 0xAD5398;
 
-	public static ArmorSet createArmorSet(Set<TeamEntry> teams) {
+	public static ArmorSet createArmorSet(Collection<TeamEntry> teams) {
 		return new ArmorSet(StainedArmorHelper.getColor(teams));
 	}
 
-	private static int getColor(Set<TeamEntry> teams) {
+	private static int getColor(Collection<TeamEntry> teams) {
 		if (teams.size() < 2) {
 			return DEFAULT_STAINED_COLOR;
 		}
@@ -26,7 +26,7 @@ public final class StainedArmorHelper {
 		List<DyeItem> dyes = new ArrayList<>(teams.size());
 
 		for (TeamEntry team : teams) {
-			DyeColor color = team.getGameTeam().getDye();
+			DyeColor color = team.getConfig().blockDyeColor();
 			if (color == null) continue;
 
 			DyeItem dye = DyeItem.byColor(color);

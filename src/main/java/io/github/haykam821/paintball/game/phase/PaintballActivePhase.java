@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.github.haykam821.paintball.game.PaintballConfig;
-import io.github.haykam821.paintball.game.event.LaunchPaintballListener;
+import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
 import io.github.haykam821.paintball.game.map.BlockStaining;
 import io.github.haykam821.paintball.game.map.PaintballMap;
 import io.github.haykam821.paintball.game.player.PlayerEntry;
@@ -22,8 +22,7 @@ import net.minecraft.item.DyeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.scoreboard.ServerScoreboard;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -33,109 +32,121 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
+import xyz.nucleoid.plasmid.game.GameActivity;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
-import xyz.nucleoid.plasmid.game.GameLogic;
 import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.TeamSelectionLobby;
-import xyz.nucleoid.plasmid.game.event.BlockHitListener;
-import xyz.nucleoid.plasmid.game.event.EntityHitListener;
-import xyz.nucleoid.plasmid.game.event.GameCloseListener;
-import xyz.nucleoid.plasmid.game.event.GameOpenListener;
-import xyz.nucleoid.plasmid.game.event.GameTickListener;
-import xyz.nucleoid.plasmid.game.event.PlayerAddListener;
-import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
-import xyz.nucleoid.plasmid.game.event.PlayerRemoveListener;
-import xyz.nucleoid.plasmid.game.player.GameTeam;
-import xyz.nucleoid.plasmid.game.rule.GameRule;
+import xyz.nucleoid.plasmid.game.common.GlobalWidgets;
+import xyz.nucleoid.plasmid.game.common.team.GameTeam;
+import xyz.nucleoid.plasmid.game.common.team.GameTeamConfig;
+import xyz.nucleoid.plasmid.game.common.team.GameTeamKey;
+import xyz.nucleoid.plasmid.game.common.team.TeamChat;
+import xyz.nucleoid.plasmid.game.common.team.TeamManager;
+import xyz.nucleoid.plasmid.game.common.team.TeamSelectionLobby;
+import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.player.PlayerOffer;
+import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.plasmid.util.BlockTraversal;
-import xyz.nucleoid.plasmid.widget.GlobalWidgets;
+import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
+import xyz.nucleoid.stimuli.event.projectile.ProjectileHitEvent;
 
-public class PaintballActivePhase implements BlockHitListener, EntityHitListener, GameCloseListener, GameOpenListener, GameTickListener, LaunchPaintballListener, PlayerAddListener, PlayerDeathListener, PlayerRemoveListener {
+public class PaintballActivePhase implements ProjectileHitEvent.Block, ProjectileHitEvent.Entity, GameActivityEvents.Enable, GameActivityEvents.Tick, LaunchPaintballEvent, GamePlayerEvents.Offer, PlayerDeathEvent, GamePlayerEvents.Remove {
 	private final ServerWorld world;
 	private final GameSpace gameSpace;
 	private final PaintballMap map;
 	private final PaintballConfig config;
 	private final Set<PlayerEntry> players;
-	private final Set<TeamEntry> teams;
+	private final Map<GameTeamKey, TeamEntry> teams = new HashMap<>();
+	private final TeamManager teamManager;
 	private final WinManager winManager = new WinManager(this);
 	private final ArmorSet stainedArmorSet;
 	private boolean singleplayer;
-	private boolean opened;
 
-	public PaintballActivePhase(GameSpace gameSpace, PaintballMap map, TeamSelectionLobby teamSelection, GlobalWidgets widgets, PaintballConfig config) {
-		this.world = gameSpace.getWorld();
+	public PaintballActivePhase(GameSpace gameSpace, ServerWorld world, PaintballMap map, TeamManager teamManager, GlobalWidgets widgets, PaintballConfig config) {
+		this.world = world;
 		this.gameSpace = gameSpace;
 		this.map = map;
 		this.config = config;
 
-		this.players = new HashSet<>(this.gameSpace.getPlayerCount());
-		this.teams = new HashSet<>(this.config.getTeams().size());
-		Map<GameTeam, TeamEntry> gameTeamsToEntries = new HashMap<>(this.config.getTeams().size());
+		this.players = new HashSet<>(this.gameSpace.getPlayers().size());
+		this.teamManager = teamManager;
 
-		MinecraftServer server = this.world.getServer();
-		ServerScoreboard scoreboard = server.getScoreboard();
+		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+			GameTeamKey teamKey = this.teamManager.teamFor(player);
+			
+			TeamEntry teamEntry = this.teams.get(teamKey);
+			if (teamEntry == null) {
+				teamEntry = new TeamEntry(this, teamKey, this.teamManager.getTeamConfig(teamKey));
+				this.teams.put(teamKey, teamEntry);
+			}
+			
+			this.players.add(new PlayerEntry(this, player, teamEntry));
+		}
 
-		teamSelection.allocate((gameTeam, player) -> {
-			// Get or create team
-			TeamEntry team = gameTeamsToEntries.get(gameTeam);
-			if (team == null) {
-				team = new TeamEntry(this, gameTeam, server);
-				this.teams.add(team);
-				gameTeamsToEntries.put(gameTeam, team);
+		this.stainedArmorSet = StainedArmorHelper.createArmorSet(this.teams.values());
+	}
+
+	private static void setRules(GameActivity activity) {
+		activity.deny(GameRuleType.BLOCK_DROPS);
+		activity.deny(GameRuleType.BREAK_BLOCKS);
+		activity.deny(GameRuleType.CRAFTING);
+		activity.deny(GameRuleType.FALL_DAMAGE);
+		activity.deny(GameRuleType.FLUID_FLOW);
+		activity.deny(GameRuleType.HUNGER);
+		activity.deny(GameRuleType.MODIFY_ARMOR);
+		activity.deny(GameRuleType.MODIFY_INVENTORY);
+		activity.deny(GameRuleType.PLACE_BLOCKS);
+		activity.deny(GameRuleType.PORTALS);
+		activity.deny(GameRuleType.PVP);
+		activity.deny(GameRuleType.THROW_ITEMS);
+		activity.deny(GameRuleType.USE_BLOCKS);
+		activity.deny(GameRuleType.USE_ENTITIES);
+	}
+
+	public static void open(GameSpace gameSpace, ServerWorld world, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
+		gameSpace.setActivity(activity -> {
+			TeamManager teamManager = TeamManager.addTo(activity);
+			TeamChat.addTo(activity, teamManager);
+
+			for (GameTeam team : config.getTeams()) {
+				GameTeamConfig teamConfig = GameTeamConfig.builder(team.config())
+					.setFriendlyFire(false)
+					.setCollision(Team.CollisionRule.NEVER)
+					.build();
+
+				teamManager.addTeam(team.key(), teamConfig);
 			}
 
-			this.players.add(new PlayerEntry(this, player, team));
-			scoreboard.addPlayerToTeam(player.getEntityName(), team.getScoreboardTeam());
-		});
+			teamSelection.allocate(gameSpace.getPlayers(), (teamKey, player) -> {
+				teamManager.addPlayerTo(player, teamKey);
+			});
 
-		this.stainedArmorSet = StainedArmorHelper.createArmorSet(this.teams);
-	}
+			GlobalWidgets widgets = GlobalWidgets.addTo(activity);
+			PaintballActivePhase phase = new PaintballActivePhase(gameSpace, world, map, teamManager, widgets, config);
 
-	private static void setRules(GameLogic game) {
-		game.deny(GameRule.BLOCK_DROPS);
-		game.deny(GameRule.BREAK_BLOCKS);
-		game.deny(GameRule.CRAFTING);
-		game.deny(GameRule.FALL_DAMAGE);
-		game.deny(GameRule.FLUID_FLOW);
-		game.deny(GameRule.HUNGER);
-		game.deny(GameRule.INTERACTION);
-		game.deny(GameRule.MODIFY_ARMOR);
-		game.deny(GameRule.MODIFY_INVENTORY);
-		game.deny(GameRule.PLACE_BLOCKS);
-		game.deny(GameRule.PORTALS);
-		game.deny(GameRule.PVP);
-		game.allow(GameRule.TEAM_CHAT);
-		game.deny(GameRule.THROW_ITEMS);
-	}
-
-	public static void open(GameSpace gameSpace, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
-		gameSpace.openGame(game -> {
-			GlobalWidgets widgets = new GlobalWidgets(game);
-			PaintballActivePhase phase = new PaintballActivePhase(gameSpace, map, teamSelection, widgets, config);
-
-			PaintballActivePhase.setRules(game);
+			PaintballActivePhase.setRules(activity);
 
 			// Listeners
-			game.listen(BlockHitListener.EVENT, phase);
-			game.listen(EntityHitListener.EVENT, phase);
-			game.listen(GameCloseListener.EVENT, phase);
-			game.listen(GameOpenListener.EVENT, phase);
-			game.listen(GameTickListener.EVENT, phase);
-			game.listen(LaunchPaintballListener.EVENT, phase);
-			game.listen(PlayerAddListener.EVENT, phase);
-			game.listen(PlayerDeathListener.EVENT, phase);
-			game.listen(PlayerRemoveListener.EVENT, phase);
+			activity.listen(ProjectileHitEvent.BLOCK, phase);
+			activity.listen(ProjectileHitEvent.ENTITY, phase);
+			activity.listen(GameActivityEvents.ENABLE, phase);
+			activity.listen(GameActivityEvents.TICK, phase);
+			activity.listen(LaunchPaintballEvent.EVENT, phase);
+			activity.listen(GamePlayerEvents.OFFER, phase);
+			activity.listen(PlayerDeathEvent.EVENT, phase);
+			activity.listen(GamePlayerEvents.REMOVE, phase);
 		});
 	}
 
 	// Listeners
 	@Override
-	public ActionResult onBlockHit(ProjectileEntity entity, BlockHitResult hitResult) {
+	public ActionResult onHitBlock(ProjectileEntity entity, BlockHitResult hitResult) {
 		if (this.config.getStainRadius() > 0) {
 			if (entity.getOwner() instanceof ServerPlayerEntity) {
 				PlayerEntry entry = this.getPlayerEntry((ServerPlayerEntity) entity.getOwner());
 				if (entry != null) {
-					DyeColor color = entry.getTeam().getGameTeam().getDye();
+					DyeColor color = entry.getTeam().getConfig().blockDyeColor();
 					BlockTraversal.create().accept(hitResult.getBlockPos(), (pos, fromPos, depth) -> {
 						if (depth > this.config.getStainRadius()) {
 							return BlockTraversal.Result.TERMINATE;
@@ -152,7 +163,7 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 	}
 
 	@Override
-	public ActionResult onEntityHit(ProjectileEntity entity, EntityHitResult hitResult) {
+	public ActionResult onHitEntity(ProjectileEntity entity, EntityHitResult hitResult) {
 		if (hitResult.getEntity() instanceof ServerPlayerEntity) {
 			ServerPlayerEntity player = (ServerPlayerEntity) hitResult.getEntity();
 
@@ -179,18 +190,7 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 	}
 
 	@Override
-	public void onClose() {
-		MinecraftServer server = this.world.getServer();
-		ServerScoreboard scoreboard = server.getScoreboard();
-
-		for (TeamEntry team : this.teams) {
-			scoreboard.removeTeam(team.getScoreboardTeam());
-		}
-	}
-
-	@Override
-	public void onOpen() {
-		this.opened = true;
+	public void onEnable() {
 		this.singleplayer = this.players.size() == 1;
 
 		for (PlayerEntry entry : this.players) {
@@ -224,7 +224,7 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 		PlayerEntry entry = this.getPlayerEntry(player);
 		if (entry == null) return null;
 
-		DyeColor color = entry.getTeam().getGameTeam().getDye();
+		DyeColor color = entry.getTeam().getConfig().blockDyeColor();
 		if (color == null) {
 			color = DyeColor.WHITE;
 		}
@@ -241,14 +241,10 @@ public class PaintballActivePhase implements BlockHitListener, EntityHitListener
 	}
 
 	@Override
-	public void onAddPlayer(ServerPlayerEntity player) {
-		PlayerEntry entry = this.getPlayerEntry(player);
-		if (entry == null) {
-			player.setGameMode(GameMode.SPECTATOR);
-			this.map.teleportToSpectatorSpawn(player);
-		} else if (this.opened) {
-			entry.eliminate(true);
-		}
+	public PlayerOfferResult onOfferPlayer(PlayerOffer offer) {
+		return this.map.acceptSpectatorSpawnOffer(offer, this.world).and(() -> {
+			offer.player().changeGameMode(GameMode.SPECTATOR);
+		});
 	}
 
 	@Override
