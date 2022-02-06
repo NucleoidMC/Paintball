@@ -72,7 +72,7 @@ public class PaintballMap {
 		Vec3d pos = region.getBounds().centerBottom();
 		float facing = region.getData().getFloat(FACING_KEY);
 
-		player.teleport(player.getServerWorld(), pos.getX(), pos.getY(), pos.getZ(), facing, 0);
+		player.teleport(player.getWorld(), pos.getX(), pos.getY(), pos.getZ(), facing, 0);
 	}
 
 	public ChunkGenerator createGenerator(MinecraftServer server) {

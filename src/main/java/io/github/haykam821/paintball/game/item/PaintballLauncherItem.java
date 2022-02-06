@@ -1,6 +1,6 @@
 package io.github.haykam821.paintball.game.item;
 
-import eu.pb4.polymer.item.VirtualItem;
+import eu.pb4.polymer.api.item.PolymerItem;
 import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -22,7 +22,7 @@ import net.minecraft.world.World;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
 
-public class PaintballLauncherItem extends Item implements VirtualItem {
+public class PaintballLauncherItem extends Item implements PolymerItem {
 	private static final int DYE_COLORS = DyeColor.values().length;
 	private static final int COOLDOWN = 10;
 
@@ -70,7 +70,7 @@ public class PaintballLauncherItem extends Item implements VirtualItem {
 		if (projectile == null) {
 			projectile = this.createDefaultProjectile(world, player);
 		}
-		projectile.setProperties(player, player.getPitch(), player.getYaw(), 0, 1.5f, 1);
+		projectile.setVelocity(player, player.getPitch(), player.getYaw(), 0, 1.5f, 1);
 
 		return projectile;
 	}
@@ -97,7 +97,7 @@ public class PaintballLauncherItem extends Item implements VirtualItem {
 	}
 
 	@Override
-	public Item getVirtualItem() {
+	public Item getPolymerItem(ItemStack stack, ServerPlayerEntity player) {
 		return Items.DIAMOND_HORSE_ARMOR;
 	}
 }
