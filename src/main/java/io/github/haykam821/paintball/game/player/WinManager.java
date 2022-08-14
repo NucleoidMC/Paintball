@@ -5,7 +5,6 @@ import io.github.haykam821.paintball.game.player.team.TeamEntry;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 
 public class WinManager {
@@ -18,11 +17,11 @@ public class WinManager {
 	}
 
 	private Text getNoWinnersMessage() {
-		return new TranslatableText("text.paintball.no_winners").formatted(Formatting.GOLD);
+		return Text.translatable("text.paintball.no_winners").formatted(Formatting.GOLD);
 	}
 
 	private Text getWinningTeamMessage(TeamEntry team) {
-		return new TranslatableText("text.paintball.win", team.getName()).formatted(Formatting.GOLD);
+		return Text.translatable("text.paintball.win", team.getName()).formatted(Formatting.GOLD);
 	}
 
 	public Text getWin() {

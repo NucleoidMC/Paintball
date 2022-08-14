@@ -10,7 +10,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.util.ItemStackBuilder;
@@ -155,15 +154,15 @@ public class PlayerEntry {
 	}
 
 	private Text getOutOfBoundsEliminationMessage() {
-		return new TranslatableText("text.paintball.eliminated.out_of_bounds", this.player.getDisplayName()).formatted(Formatting.RED);
+		return Text.translatable("text.paintball.eliminated.out_of_bounds", this.player.getDisplayName()).formatted(Formatting.RED);
 	}
 
 	private Text getDamageEliminationMessage() {
-		return new TranslatableText("text.paintball.eliminated.by", this.player.getDisplayName(), this.lastDamager.getPlayer().getDisplayName()).formatted(Formatting.RED);
+		return Text.translatable("text.paintball.eliminated.by", this.player.getDisplayName(), this.lastDamager.getPlayer().getDisplayName()).formatted(Formatting.RED);
 	}
 
 	private Text getGenericEliminationMessage() {
-		return new TranslatableText("text.paintball.eliminated", this.player.getDisplayName()).formatted(Formatting.RED);
+		return Text.translatable("text.paintball.eliminated", this.player.getDisplayName()).formatted(Formatting.RED);
 	}
 
 	@Override

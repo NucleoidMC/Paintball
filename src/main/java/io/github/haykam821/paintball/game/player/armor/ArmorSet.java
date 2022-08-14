@@ -5,7 +5,6 @@ import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import xyz.nucleoid.plasmid.util.ItemStackBuilder;
 
 public class ArmorSet {
@@ -45,7 +44,7 @@ public class ArmorSet {
 	}
 
 	private Text getArmorName(TeamEntry team, String key) {
-		return new TranslatableText("text.paintball.team_armor." + key, team.getName())
+		return Text.translatable("text.paintball.team_armor." + key, team.getName())
 			.formatted(team.getConfig().chatFormatting());
 	}
 
