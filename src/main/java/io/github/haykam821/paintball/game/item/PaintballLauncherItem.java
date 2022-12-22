@@ -1,6 +1,6 @@
 package io.github.haykam821.paintball.game.item;
 
-import eu.pb4.polymer.api.item.PolymerItem;
+import eu.pb4.polymer.core.api.item.PolymerItem;
 import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
