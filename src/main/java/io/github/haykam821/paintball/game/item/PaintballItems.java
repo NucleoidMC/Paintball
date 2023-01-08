@@ -3,8 +3,9 @@ package io.github.haykam821.paintball.game.item;
 import io.github.haykam821.paintball.Main;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 
 public enum PaintballItems implements ItemConvertible {
 	PAINTBALL_LAUNCHER("paintball_launcher", new PaintballLauncherItem(new Item.Settings()));
@@ -24,7 +25,7 @@ public enum PaintballItems implements ItemConvertible {
 
 	public static void register() {
 		for (PaintballItems item : PaintballItems.values()) {
-			Registry.register(Registry.ITEM, item.id, item.item);
+			Registry.register(Registries.ITEM, item.id, item.item);
 		}
 	}
 }
