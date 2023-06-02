@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import io.github.haykam821.paintball.Main;
 import io.github.haykam821.paintball.game.PaintballConfig;
 import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
 import io.github.haykam821.paintball.game.map.BlockStaining;
@@ -99,6 +100,7 @@ public class PaintballActivePhase implements ProjectileHitEvent.Block, Projectil
 		activity.deny(GameRuleType.MODIFY_INVENTORY);
 		activity.deny(GameRuleType.PLACE_BLOCKS);
 		activity.deny(GameRuleType.PORTALS);
+		activity.deny(Main.PROJECTILE_BARRIER_COLLISION);
 		activity.deny(GameRuleType.PVP);
 		activity.deny(GameRuleType.THROW_ITEMS);
 		activity.deny(GameRuleType.USE_BLOCKS);

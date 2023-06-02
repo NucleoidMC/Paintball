@@ -9,12 +9,15 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.plasmid.game.GameType;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 
 public class Main implements ModInitializer {
 	public static final String MOD_ID = "paintball";
 
 	private static final Identifier PAINTBALL_ID = new Identifier(MOD_ID, "paintball");
 	public static final GameType<PaintballConfig> PAINTBALL_TYPE = GameType.register(PAINTBALL_ID, PaintballConfig.CODEC, PaintballWaitingPhase::open);
+
+	public static final GameRuleType PROJECTILE_BARRIER_COLLISION = GameRuleType.create();
 
 	private static final Identifier STAINABLE_TERRACOTTA_ID = new Identifier(MOD_ID, "stainable_terracotta");
 	public static final TagKey<Block> STAINABLE_TERRACOTTA = TagKey.of(RegistryKeys.BLOCK, STAINABLE_TERRACOTTA_ID);

@@ -16,6 +16,9 @@
 			"io.github.haykam821.paintball.Main"
 		]
 	},
+	"mixins": [
+		"paintball.mixin.json"
+	],
 	"license": "MIT",
 	"icon": "assets/paintball/icon.png",
 	"depends": {
