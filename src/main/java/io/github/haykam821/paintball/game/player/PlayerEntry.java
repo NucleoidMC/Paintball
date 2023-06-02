@@ -141,6 +141,8 @@ public class PlayerEntry {
 	}
 
 	public void eliminate(Text message, boolean remove) {
+		if (this.phase.isGameEnding()) return;
+
 		this.phase.sendMessage(message);
 
 		if (remove) {

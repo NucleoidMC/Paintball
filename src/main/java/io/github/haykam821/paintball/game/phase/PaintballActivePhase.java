@@ -62,6 +62,7 @@ public class PaintballActivePhase implements ProjectileHitEvent.Block, Projectil
 	private final WinManager winManager = new WinManager(this);
 	private final ArmorSet stainedArmorSet;
 	private boolean singleplayer;
+	private int ticksUntilClose = -1;
 
 	public PaintballActivePhase(GameSpace gameSpace, ServerWorld world, PaintballMap map, TeamManager teamManager, GlobalWidgets widgets, PaintballConfig config) {
 		this.world = world;
@@ -200,6 +201,16 @@ public class PaintballActivePhase implements ProjectileHitEvent.Block, Projectil
 
 	@Override
 	public void onTick() {
+		// Decrease ticks until game end to zero
+		if (this.isGameEnding()) {
+			if (this.ticksUntilClose == 0) {
+				this.gameSpace.close(GameCloseReason.FINISHED);
+			}
+
+			this.ticksUntilClose -= 1;
+			return;
+		}
+
 		Iterator<PlayerEntry> iterator = this.players.iterator();
 		while (iterator.hasNext()) {
 			PlayerEntry entry = iterator.next();
@@ -215,7 +226,7 @@ public class PaintballActivePhase implements ProjectileHitEvent.Block, Projectil
 		Text win = this.winManager.getWin();
 		if (win != null) {
 			this.sendMessage(win);
-			gameSpace.close(GameCloseReason.FINISHED);
+			this.ticksUntilClose = this.config.getTicksUntilClose().get(this.world.getRandom());
 		}
 	}
 
@@ -282,6 +293,10 @@ public class PaintballActivePhase implements ProjectileHitEvent.Block, Projectil
 	}
 
 	// Utilities
+	public boolean isGameEnding() {
+		return this.ticksUntilClose >= 0;
+	}
+
 	public void sendMessage(Text message) {
 		this.gameSpace.getPlayers().sendMessage(message);
 	}
