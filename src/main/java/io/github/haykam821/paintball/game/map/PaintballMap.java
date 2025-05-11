@@ -55,7 +55,7 @@ public class PaintballMap {
 
 	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerWorld world, TemplateRegion region) {
 		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY);
+		float facing = region.getData().getFloat(FACING_KEY, 0);
 
 		return acceptor.teleport(world, pos).thenRunForEach(player -> {
 			player.setYaw(facing);
@@ -72,7 +72,7 @@ public class PaintballMap {
 
 	private void teleportToSpawn(ServerPlayerEntity player, TemplateRegion region) {
 		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY);
+		float facing = region.getData().getFloat(FACING_KEY, 0);
 
 		player.teleport(player.getServerWorld(), pos.getX(), pos.getY(), pos.getZ(), Set.of(), facing, 0, true);
 	}
