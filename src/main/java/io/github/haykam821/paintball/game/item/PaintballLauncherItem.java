@@ -46,7 +46,7 @@ public class PaintballLauncherItem extends Item implements PolymerItem {
 	}
 
 	private ProjectileEntity createDefaultProjectile(World world, ServerPlayerEntity player) {
-		DyeColor color = DyeColor.byId(world.getRandom().nextInt(DYE_COLORS));
+		DyeColor color = DyeColor.byIndex(world.getRandom().nextInt(DYE_COLORS));
 		if (color == null) {
 			color = DyeColor.WHITE;
 		}
