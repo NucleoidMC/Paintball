@@ -1,10 +1,10 @@
 package io.github.haykam821.paintball.game.player.armor;
 
 import io.github.haykam821.paintball.game.player.team.TeamEntry;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.chat.Component;
 import xyz.nucleoid.plasmid.api.util.ItemStackBuilder;
 
 public class ArmorSet {
@@ -35,7 +35,7 @@ public class ArmorSet {
 		return this.getArmorItem(Items.LEATHER_BOOTS, team, BOOTS_KEY);
 	}
 
-	private ItemStack getArmorItem(ItemConvertible item, TeamEntry team, String key) {
+	private ItemStack getArmorItem(ItemLike item, TeamEntry team, String key) {
 		return ItemStackBuilder.of(item)
 			.setDyeColor(this.color)
 			.setName(this.getArmorName(team, key))
@@ -43,9 +43,9 @@ public class ArmorSet {
 			.build();
 	}
 
-	private Text getArmorName(TeamEntry team, String key) {
-		return Text.translatable("text.paintball.team_armor." + key, team.getName())
-			.formatted(team.getConfig().chatFormatting());
+	private Component getArmorName(TeamEntry team, String key) {
+		return Component.translatable("text.paintball.team_armor." + key, team.getName())
+			.withStyle(team.getConfig().chatFormatting());
 	}
 
 	@Override

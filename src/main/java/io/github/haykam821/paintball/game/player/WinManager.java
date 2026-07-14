@@ -4,8 +4,8 @@ import io.github.haykam821.paintball.game.phase.PaintballActivePhase;
 import io.github.haykam821.paintball.game.player.team.TeamEntry;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 
 public class WinManager {
 	private final PaintballActivePhase phase;
@@ -16,15 +16,15 @@ public class WinManager {
 		this.playerCounts.defaultReturnValue(0);
 	}
 
-	private Text getNoWinnersMessage() {
-		return Text.translatable("text.paintball.no_winners").formatted(Formatting.GOLD);
+	private Component getNoWinnersMessage() {
+		return Component.translatable("text.paintball.no_winners").withStyle(ChatFormatting.GOLD);
 	}
 
-	private Text getWinningTeamMessage(TeamEntry team) {
-		return Text.translatable("text.paintball.win", team.getName()).formatted(Formatting.GOLD);
+	private Component getWinningTeamMessage(TeamEntry team) {
+		return Component.translatable("text.paintball.win", team.getName()).withStyle(ChatFormatting.GOLD);
 	}
 
-	public Text getWin() {
+	public Component getWin() {
 		this.playerCounts.clear();
 		for (PlayerEntry entry : this.phase.getPlayers()) {
 			if (entry.getTeam() != null && entry.isAlive()) {

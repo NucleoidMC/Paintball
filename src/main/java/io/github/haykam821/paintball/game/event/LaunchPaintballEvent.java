@@ -1,16 +1,16 @@
 package io.github.haykam821.paintball.game.event;
 
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
 public interface LaunchPaintballEvent {
 	public StimulusEvent<LaunchPaintballEvent> EVENT = StimulusEvent.create(LaunchPaintballEvent.class, context -> {
-		return (world, player) -> {
+		return (level, player) -> {
 			try {
 				for (LaunchPaintballEvent listener : context.getListeners()) {
-					ProjectileEntity projectile = listener.onLaunchProjectile(world, player);
+					Projectile projectile = listener.onLaunchProjectile(level, player);
 					if (projectile != null) {
 						return projectile;
 					}
@@ -22,5 +22,5 @@ public interface LaunchPaintballEvent {
 		};
 	});
 
-	public ProjectileEntity onLaunchProjectile(World world, ServerPlayerEntity player);
+	public Projectile onLaunchProjectile(Level level, ServerPlayer player);
 }

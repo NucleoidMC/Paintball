@@ -2,8 +2,8 @@ package io.github.haykam821.paintball.game.player.team;
 
 import io.github.haykam821.paintball.game.phase.PaintballActivePhase;
 import io.github.haykam821.paintball.game.player.armor.ArmorSet;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
 
@@ -19,7 +19,7 @@ public class TeamEntry {
 		this.key = key;
 		this.config = config;
 
-		this.armorSet = new ArmorSet(config.dyeColor().getRgb());
+		this.armorSet = new ArmorSet(config.dyeColor().getValue());
 	}
 
 	// Getters
@@ -32,11 +32,11 @@ public class TeamEntry {
 	}
 
 	// Utilities
-	public Text getName() {
+	public Component getName() {
 		return this.config.name();
 	}
 
-	public boolean teleportToSpawn(ServerPlayerEntity player) {
+	public boolean teleportToSpawn(ServerPlayer player) {
 		return this.phase.getMap().teleportToSpawn(player, this.key.id() + "_spawn");
 	}
 

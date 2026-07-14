@@ -5,9 +5,10 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.SharedConstants;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.intprovider.ConstantIntProvider;
-import net.minecraft.util.math.intprovider.IntProvider;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.util.valueproviders.IntProviders;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamList;
 
@@ -18,7 +19,7 @@ public class PaintballConfig {
 			WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(PaintballConfig::getPlayerConfig),
 			GameTeamList.CODEC.fieldOf("teams").forGetter(PaintballConfig::getTeams),
 			StainRemovalConfig.CODEC.optionalFieldOf("stain_removal", StainRemovalConfig.DEFAULT).forGetter(PaintballConfig::getStainRemoval),
-			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(PaintballConfig::getTicksUntilClose),
+			IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantInt.of(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(PaintballConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("max_damage", 4).forGetter(PaintballConfig::getMaxDamage),
 			Codec.BOOL.optionalFieldOf("allow_friendly_fire", false).forGetter(PaintballConfig::shouldAllowFriendlyFire),
 			Codec.BOOL.optionalFieldOf("revival", true).forGetter(PaintballConfig::hasRevival),
