@@ -1,5 +1,6 @@
 package io.github.haykam821.paintball.game.player;
 
+import net.minecraft.world.entity.EntityTypes;
 import org.joml.Matrix4f;
 
 import com.mojang.authlib.GameProfile;
@@ -9,42 +10,42 @@ import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
 import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
 import eu.pb4.polymer.virtualentity.api.attachment.HolderAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
-import io.github.haykam821.paintball.mixin.ArmorStandEntityAccessor;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Arm;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.EulerAngle;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import io.github.haykam821.paintball.mixin.ArmorStandAccessor;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.Rotations;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class RevivalMarker {
-	private static final Vec3d HEAD_DISPLAY_OFFSET = new Vec3d(0, 1.975, 0);
+	private static final Vec3 HEAD_DISPLAY_OFFSET = new Vec3(0, 1.975, 0);
 
-	private final ArmorStandEntity bodyEntity;
+	private final ArmorStand bodyEntity;
 	private final HolderAttachment attachment;
 
-	private RevivalMarker(ArmorStandEntity bodyEntity, HolderAttachment attachment) {
+	private RevivalMarker(ArmorStand bodyEntity, HolderAttachment attachment) {
 		this.bodyEntity = bodyEntity;
 		this.attachment = attachment;
 	}
 
-	public Vec3d getPos() {
-		return this.bodyEntity.getPos();
+	public Vec3 getPos() {
+		return this.bodyEntity.position();
 	}
 
 	public float getPitch() {
-		return this.bodyEntity.getPitch();
+		return this.bodyEntity.getXRot();
 	}
 
 	public float getYaw() {
-		return this.bodyEntity.getYaw();
+		return this.bodyEntity.getYRot();
 	}
 
 	public void destroy() {
@@ -54,24 +55,24 @@ public class RevivalMarker {
 		this.attachment.destroy();
 	}
 
-	private static ArmorStandEntity createArmorStand(PlayerEntry entry) {
-		ServerPlayerEntity player = entry.getPlayer();
-		ServerWorld world = player.getServerWorld();
+	private static ArmorStand createArmorStand(PlayerEntry entry) {
+		ServerPlayer player = entry.getPlayer();
+		ServerLevel world = player.level();
 
-		ArmorStandEntity entity = new ArmorStandEntity(EntityType.ARMOR_STAND, world);
-		ArmorStandEntityAccessor accessor = (ArmorStandEntityAccessor) (Object) entity;
+		ArmorStand entity = new ArmorStand(EntityTypes.ARMOR_STAND, world);
+		ArmorStandAccessor accessor = (ArmorStandAccessor) (Object) entity;
 
 		// Position
-		entity.setPosition(entry.getRecoveryPos());
+		entity.setPos(entry.getRecoveryPos());
 
-		entity.setYaw(player.getYaw());
-		entity.setPitch(player.getPitch());
+		entity.setYRot(player.getYRot());
+		entity.setXRot(player.getXRot());
 
 		// Appearance
-		entity.setHeadRotation(new EulerAngle(player.getPitch(), 0, 0));
+		entity.setHeadPose(new Rotations(player.getXRot(), 0, 0));
 
 		entity.setShowArms(true);
-		entity.setHideBasePlate(true);
+		entity.setNoBasePlate(true);
 
 		// Behavior
 		accessor.paintball$setDisabledSlots(Integer.MAX_VALUE);
@@ -80,33 +81,33 @@ public class RevivalMarker {
 		return entity;
 	}
 
-	private static ItemStack createHeadStack(ServerPlayerEntity player) {
+	private static ItemStack createHeadStack(ServerPlayer player) {
 		GameProfile profile = player.getGameProfile();
 
 		ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
-		stack.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
+		stack.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
 
 		return stack;
 	}
 
 	public static RevivalMarker spawnFromPlayer(PlayerEntry entry) {
-		ServerPlayerEntity player = entry.getPlayer();
-		ServerWorld world = player.getServerWorld();
+		ServerPlayer player = entry.getPlayer();
+		ServerLevel level = player.level();
 
 		// Body entity
-		ArmorStandEntity bodyEntity = createArmorStand(entry);
+		ArmorStand bodyEntity = createArmorStand(entry);
 
 		entry.applyArmor(entry.getDamageProgress(), bodyEntity);
 
-		ItemStack mainHandStack = player.getStackInHand(Hand.MAIN_HAND);
-		ItemStack offHandStack = player.getStackInHand(Hand.OFF_HAND);
+		ItemStack mainHandStack = player.getItemInHand(InteractionHand.MAIN_HAND);
+		ItemStack offHandStack = player.getItemInHand(InteractionHand.OFF_HAND);
 
-		if (player.getMainArm() == Arm.RIGHT) {
-			bodyEntity.setStackInHand(Hand.MAIN_HAND, mainHandStack);
-			bodyEntity.setStackInHand(Hand.OFF_HAND, offHandStack);
+		if (player.getMainArm() == HumanoidArm.RIGHT) {
+			bodyEntity.setItemInHand(InteractionHand.MAIN_HAND, mainHandStack);
+			bodyEntity.setItemInHand(InteractionHand.OFF_HAND, offHandStack);
 		} else {
-			bodyEntity.setStackInHand(Hand.MAIN_HAND, offHandStack);
-			bodyEntity.setStackInHand(Hand.OFF_HAND, mainHandStack);
+			bodyEntity.setItemInHand(InteractionHand.MAIN_HAND, offHandStack);
+			bodyEntity.setItemInHand(InteractionHand.OFF_HAND, mainHandStack);
 		}
 
 		bodyEntity.setCustomName(player.getDisplayName());
@@ -117,9 +118,9 @@ public class RevivalMarker {
 
 		Matrix4f transformation = new Matrix4f()
 			.translate(0, -0.55f, 0)
-			.rotateY(MathHelper.PI)
-			.rotateY(-player.getYaw() * MathHelper.RADIANS_PER_DEGREE)
-			.rotateX(-player.getPitch() * MathHelper.RADIANS_PER_DEGREE)
+			.rotateY(Mth.PI)
+			.rotateY(-player.getYRot() * Mth.DEG_TO_RAD)
+			.rotateX(-player.getXRot() * Mth.DEG_TO_RAD)
 			.translate(0, 0.5f, 0);
 
 		headElement.setTransformation(transformation);
@@ -137,7 +138,7 @@ public class RevivalMarker {
 		ElementHolder holder = new ElementHolder();
 		holder.addElement(headElement);
 
-		world.spawnEntity(bodyEntity);
+		level.addFreshEntity(bodyEntity);
 		VirtualEntityUtils.addVirtualPassenger(bodyEntity, headElement.getEntityId());
 
 		HolderAttachment attachment = EntityAttachment.ofTicking(holder, bodyEntity);

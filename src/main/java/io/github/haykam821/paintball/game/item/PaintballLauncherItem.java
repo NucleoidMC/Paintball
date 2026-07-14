@@ -2,25 +2,26 @@ package io.github.haykam821.paintball.game.item;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
 import io.github.haykam821.paintball.game.event.LaunchPaintballEvent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.entity.projectile.thrown.SnowballEntity;
-import net.minecraft.item.DyeItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.stat.Stats;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
-import xyz.nucleoid.packettweaker.PacketContext;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
 
@@ -28,77 +29,77 @@ public class PaintballLauncherItem extends Item implements PolymerItem {
 	private static final int DYE_COLORS = DyeColor.values().length;
 	private static final int COOLDOWN = 10;
 
-	public PaintballLauncherItem(Item.Settings settings) {
+	public PaintballLauncherItem(Properties settings) {
 		super(settings);
 	}
 
-	private void playSound(SoundEvent sound, World world, ServerPlayerEntity player) {
-		float pitch = (world.getRandom().nextFloat() * 0.3f) + 1.7f;
-		world.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundCategory.PLAYERS, 0.5f, pitch);
+	private void playSound(SoundEvent sound, Level level, ServerPlayer player) {
+		float pitch = (level.getRandom().nextFloat() * 0.3f) + 1.7f;
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 0.5f, pitch);
 	}
 
-	private SoundEvent getFailSound(World world, ServerPlayerEntity player) {
-		return SoundEvents.BLOCK_DISPENSER_FAIL;
+	private SoundEvent getFailSound(Level level, ServerPlayer player) {
+		return SoundEvents.DISPENSER_FAIL;
 	}
 
-	private SoundEvent getLaunchSound(World world, ServerPlayerEntity player) {
-		return SoundEvents.ENTITY_SNOWBALL_THROW;
+	private SoundEvent getLaunchSound(Level level, ServerPlayer player) {
+		return SoundEvents.SNOWBALL_THROW;
 	}
 
-	private ProjectileEntity createDefaultProjectile(World world, ServerPlayerEntity player) {
-		DyeColor color = DyeColor.byId(world.getRandom().nextInt(DYE_COLORS));
+	private Projectile createDefaultProjectile(Level level, ServerPlayer player) {
+		DyeColor color = DyeColor.byFireworkColor(level.getRandom().nextInt(DYE_COLORS));
 		if (color == null) {
 			color = DyeColor.WHITE;
 		}
 
-		Item item = DyeItem.byColor(color);
+		Item item = Items.DYE.pick(color);
 		if (item == null) {
-			item = Items.WHITE_DYE;
+			item = Items.DYE.white();
 		}
 
 		ItemStack stack = new ItemStack(item);
-		SnowballEntity projectile = new SnowballEntity(world, player, stack);
+		Snowball projectile = new Snowball(level, player, stack);
 
 		return projectile;
 	}
 
-	private Entity createProjectile(World world, ServerPlayerEntity player) {
-		ProjectileEntity projectile;
+	private Entity createProjectile(Level level, ServerPlayer player) {
+		Projectile projectile;
 
 		try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
-			projectile = invokers.get(LaunchPaintballEvent.EVENT).onLaunchProjectile(world, player);
+			projectile = invokers.get(LaunchPaintballEvent.EVENT).onLaunchProjectile(level, player);
 		}
 
 		if (projectile == null) {
-			projectile = this.createDefaultProjectile(world, player);
+			projectile = this.createDefaultProjectile(level, player);
 		}
-		projectile.setVelocity(player, player.getPitch(), player.getYaw(), 0, 1.5f, 1);
+		projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, 1.5f, 1);
 
 		return projectile;
 	}
 
 	@Override
-	public ActionResult use(World world, PlayerEntity user, Hand hand) {
-		ItemStack stack = user.getStackInHand(hand);
-		if (world.isClient()) {
-			return ActionResult.SUCCESS;
+	public InteractionResult use(Level level, Player user, InteractionHand hand) {
+		ItemStack stack = user.getItemInHand(hand);
+		if (level.isClientSide()) {
+			return InteractionResult.SUCCESS;
 		}
 
-		ServerPlayerEntity serverPlayer = (ServerPlayerEntity) user;
-		Entity projectile = this.createProjectile(world, serverPlayer);
+		ServerPlayer serverPlayer = (ServerPlayer) user;
+		Entity projectile = this.createProjectile(level, serverPlayer);
 
 		if (projectile == null) {
-			this.playSound(this.getFailSound(world, serverPlayer), world, serverPlayer);
+			this.playSound(this.getFailSound(level, serverPlayer), level, serverPlayer);
 		} else {
-			this.playSound(this.getLaunchSound(world, serverPlayer), world, serverPlayer);
-			serverPlayer.incrementStat(Stats.USED.getOrCreateStat(this));
+			this.playSound(this.getLaunchSound(level, serverPlayer), level, serverPlayer);
+			serverPlayer.awardStat(Stats.ITEM_USED.get(this));
 
-			serverPlayer.getItemCooldownManager().set(stack, COOLDOWN);
+			serverPlayer.getCooldowns().addCooldown(stack, COOLDOWN);
 
-			world.spawnEntity(projectile);
+			level.addFreshEntity(projectile);
 		}
 
-		return ActionResult.CONSUME;
+		return InteractionResult.CONSUME;
 	}
 
 	@Override
@@ -107,7 +108,7 @@ public class PaintballLauncherItem extends Item implements PolymerItem {
 	}
 
 	@Override
-	public Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
+	public Identifier getPolymerItemModel(ItemStack stack, PacketContext context, HolderLookup.Provider lookup) {
 		return null;
 	}
 }

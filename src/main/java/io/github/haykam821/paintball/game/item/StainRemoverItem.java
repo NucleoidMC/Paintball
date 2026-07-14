@@ -1,15 +1,16 @@
 package io.github.haykam821.paintball.game.item;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.SplashPotionItem;
-import net.minecraft.util.Identifier;
-import xyz.nucleoid.packettweaker.PacketContext;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SplashPotionItem;
+import net.minecraft.resources.Identifier;
 
 public class StainRemoverItem extends SplashPotionItem implements PolymerItem {
-	public StainRemoverItem(Item.Settings settings) {
+	public StainRemoverItem(Item.Properties settings) {
 		super(settings);
 	}
 
@@ -19,7 +20,7 @@ public class StainRemoverItem extends SplashPotionItem implements PolymerItem {
 	}
 
 	@Override
-	public Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
+	public Identifier getPolymerItemModel(ItemStack stack, PacketContext context, HolderLookup.Provider lookup) {
 		return null;
 	}
 }

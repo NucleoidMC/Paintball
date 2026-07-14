@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.List;
 
 import io.github.haykam821.paintball.game.player.team.TeamEntry;
-import net.minecraft.component.type.DyedColorComponent;
-import net.minecraft.item.DyeItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.DyeColor;
+import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
 
 public final class StainedArmorHelper {
 	private static final int DEFAULT_STAINED_COLOR = 0xAD5398;
@@ -23,23 +23,19 @@ public final class StainedArmorHelper {
 			return DEFAULT_STAINED_COLOR;
 		}
 
-		List<DyeItem> dyes = new ArrayList<>(teams.size());
+		List<DyeColor> dyes = new ArrayList<>(teams.size());
 
 		for (TeamEntry team : teams) {
 			DyeColor color = team.getConfig().blockDyeColor();
 			if (color == null) continue;
-
-			DyeItem dye = DyeItem.byColor(color);
-			if (dye == null) continue;
-
-			dyes.add(dye);
+			dyes.add(color);
 		}
 
 		return StainedArmorHelper.getColorFromDyes(dyes);
 	}
 
-	private static int getColorFromDyes(List<DyeItem> dyes) {
-		ItemStack stack = DyedColorComponent.setColor(new ItemStack(Items.LEATHER_BOOTS), dyes);
-		return DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR);
+	private static int getColorFromDyes(List<DyeColor> dyes) {
+		ItemStack stack = DyedItemColor.applyDyes(new ItemStack(Items.LEATHER_BOOTS), dyes);
+		return DyedItemColor.getOrDefault(stack, DyedItemColor.LEATHER_COLOR);
 	}
 }

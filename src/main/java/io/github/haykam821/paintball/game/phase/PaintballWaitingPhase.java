@@ -3,13 +3,13 @@ package io.github.haykam821.paintball.game.phase;
 import io.github.haykam821.paintball.game.PaintballConfig;
 import io.github.haykam821.paintball.game.map.PaintballMap;
 import io.github.haykam821.paintball.game.map.PaintballMapBuilder;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.GameRules;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.gamerules.GameRules;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
@@ -29,14 +29,14 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class PaintballWaitingPhase implements GameActivityEvents.Tick, GamePlayerEvents.Accept, PlayerDamageEvent, PlayerDeathEvent, GameActivityEvents.RequestStart {
 	private final GameSpace gameSpace;
-	private final ServerWorld world;
+	private final ServerLevel level;
 	private final PaintballMap map;
 	private final TeamSelectionLobby teamSelection;
 	private final PaintballConfig config;
 
-	public PaintballWaitingPhase(GameSpace gameSpace, ServerWorld world, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
+	public PaintballWaitingPhase(GameSpace gameSpace, ServerLevel level, PaintballMap map, TeamSelectionLobby teamSelection, PaintballConfig config) {
 		this.gameSpace = gameSpace;
-		this.world = world;
+		this.level = level;
 		this.map = map;
 		this.teamSelection = teamSelection;
 		this.config = config;
@@ -65,14 +65,14 @@ public class PaintballWaitingPhase implements GameActivityEvents.Tick, GamePlaye
 		PaintballMapBuilder mapBuilder = new PaintballMapBuilder(config);
 		PaintballMap map = mapBuilder.create(server);
 
-		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+		RuntimeLevelConfig levelConfig = new RuntimeLevelConfig()
 			.setGenerator(map.createGenerator(server))
-			.setGameRule(GameRules.NATURAL_REGENERATION, false)
+			.setGameRule(GameRules.NATURAL_HEALTH_REGENERATION, false)
 			.setGameRule(GameRules.DROWNING_DAMAGE, false);
 
-		return context.openWithWorld(worldConfig, (activity, world) -> {
+		return context.openWithLevel(levelConfig, (activity, level) -> {
 			TeamSelectionLobby teamSelection = TeamSelectionLobby.addTo(activity, config.getTeams());
-			PaintballWaitingPhase phase = new PaintballWaitingPhase(activity.getGameSpace(), world, map, teamSelection, config);
+			PaintballWaitingPhase phase = new PaintballWaitingPhase(activity.getGameSpace(), level, map, teamSelection, config);
 			GameWaitingLobby.addTo(activity, config.getPlayerConfig());
 
 			PaintballWaitingPhase.setRules(activity);
@@ -89,7 +89,7 @@ public class PaintballWaitingPhase implements GameActivityEvents.Tick, GamePlaye
 
 	@Override
 	public void onTick() {
-		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+		for (ServerPlayer player : this.gameSpace.getPlayers()) {
 			if (this.map.isOutOfBounds(player)) {
 				this.map.teleportToWaitingSpawn(player);
 			}
@@ -98,25 +98,25 @@ public class PaintballWaitingPhase implements GameActivityEvents.Tick, GamePlaye
 
 	@Override
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
-		return this.map.acceptWaitingSpawnOffer(acceptor, this.world).thenRunForEach(player -> {
-			player.changeGameMode(GameMode.ADVENTURE);
+		return this.map.acceptWaitingSpawnOffer(acceptor, this.level).thenRunForEach(player -> {
+			player.setGameMode(GameType.ADVENTURE);
 		});
 	}
 
 	@Override
-	public EventResult onDamage(ServerPlayerEntity player, DamageSource source, float amount) {
+	public EventResult onDamage(ServerPlayer player, DamageSource source, float amount) {
 		return EventResult.DENY;
 	}
 
 	@Override
-	public EventResult onDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onDeath(ServerPlayer player, DamageSource source) {
 		this.map.teleportToWaitingSpawn(player);
 		return EventResult.DENY;
 	}
 
 	@Override
 	public GameResult onRequestStart() {
-		PaintballActivePhase.open(this.gameSpace, this.world, this.map, this.teamSelection, this.config);
+		PaintballActivePhase.open(this.gameSpace, this.level, this.map, this.teamSelection, this.config);
 		return GameResult.ok();
 	}
 }

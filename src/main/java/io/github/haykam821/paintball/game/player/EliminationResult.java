@@ -1,5 +1,5 @@
 package io.github.haykam821.paintball.game.player;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
-public record EliminationResult(Text message, boolean revivable) {}
+public record EliminationResult(Component message, boolean revivable) {}
