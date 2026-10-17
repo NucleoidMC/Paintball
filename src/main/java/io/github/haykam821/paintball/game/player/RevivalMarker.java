@@ -76,7 +76,7 @@ public class RevivalMarker {
 
 		// Behavior
 		accessor.paintball$setDisabledSlots(Integer.MAX_VALUE);
-		entity.setInvulnerable(true);
+		entity.setPermanentlyInvulnerable(true);
 
 		return entity;
 	}

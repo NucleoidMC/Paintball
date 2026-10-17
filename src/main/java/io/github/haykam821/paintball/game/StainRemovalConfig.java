@@ -6,10 +6,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.paintball.Main;
+import net.minecraft.core.registries.codec.RegistryCodecs;
 import net.minecraft.util.valueproviders.*;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Holder;
@@ -32,7 +32,7 @@ public record StainRemovalConfig(
 
 	public static final Codec<StainRemovalConfig> CODEC = RecordCodecBuilder.create(instance -> {
 		return instance.group(
-			RegistryCodecs.homogeneousList(Registries.ITEM).optionalFieldOf("items").forGetter(StainRemovalConfig::items),
+			RegistryCodecs.holderSet(Registries.ITEM).optionalFieldOf("items").forGetter(StainRemovalConfig::items),
 			IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("initial_count", DEFAULT.initialCount()).forGetter(StainRemovalConfig::initialCount),
 			FloatProviders.codec(0, Float.MAX_VALUE).optionalFieldOf("radius", DEFAULT.radius()).forGetter(StainRemovalConfig::radius),
 			IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("recover_amount").forGetter(StainRemovalConfig::recoverAmount)
